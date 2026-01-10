@@ -9,6 +9,10 @@ This repository contains installable components for setting up a consistent deve
 ### Current Components
 
 - **[ozsh](ozsh/)** - Oh My Zsh with Spaceship prompt and plugins
+  - Automatic shell change to zsh
+  - Syntax highlighting & auto-suggestions
+  - Git integration
+  - Docker/Kubernetes support
 
 ### Future Components
 
