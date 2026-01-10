@@ -92,6 +92,7 @@ setopt inc_append_history
 
 SPACESHIP_PROMPT_ORDER=(
   user
+  host
   dir
   git
   node
