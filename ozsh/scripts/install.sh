@@ -18,7 +18,7 @@ echo -e "${BLUE}Oh My Zsh Configuration Installer${NC}"
 echo -e "${BLUE}==================================${NC}\n"
 
 # Check if zsh is installed
-echo -e "${YELLOW}[1/6] Checking for zsh installation...${NC}"
+echo -e "${YELLOW}[1/7] Checking for zsh installation...${NC}"
 if ! command -v zsh &> /dev/null; then
     echo -e "${RED}✗ zsh is not installed${NC}"
     echo "Please install zsh first:"
@@ -30,7 +30,7 @@ fi
 echo -e "${GREEN}✓ zsh found at $(which zsh)${NC}"
 
 # Check if Oh My Zsh is installed
-echo -e "${YELLOW}[2/5] Checking for Oh My Zsh installation...${NC}"
+echo -e "${YELLOW}[2/7] Checking for Oh My Zsh installation...${NC}"
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
     echo -e "${YELLOW}Installing Oh My Zsh...${NC}"
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
@@ -39,8 +39,19 @@ else
     echo -e "${GREEN}✓ Oh My Zsh already installed${NC}"
 fi
 
+# Install fzf
+echo -e "${YELLOW}[3/7] Checking for fzf installation...${NC}"
+if ! command -v fzf &> /dev/null; then
+    echo -e "${YELLOW}Installing fzf...${NC}"
+    git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+    ~/.fzf/install --all --no-bash --no-fish
+    echo -e "${GREEN}✓ fzf installed${NC}"
+else
+    echo -e "${GREEN}✓ fzf already installed${NC}"
+fi
+
 # Install plugins
-echo -e "${YELLOW}[3/5] Installing required plugins...${NC}"
+echo -e "${YELLOW}[4/7] Installing required plugins...${NC}"
 
 # zsh-autosuggestions
 if [ ! -d "$HOME/.oh-my-zsh/plugins/zsh-autosuggestions" ]; then
@@ -61,7 +72,7 @@ else
 fi
 
 # Install spaceship theme
-echo -e "${YELLOW}[4/5] Installing spaceship theme...${NC}"
+echo -e "${YELLOW}[5/7] Installing spaceship theme...${NC}"
 if [ ! -d "$HOME/.oh-my-zsh/themes/spaceship-prompt" ]; then
     echo "  Installing spaceship theme..."
     git clone https://github.com/spaceship-prompt/spaceship-prompt.git "$HOME/.oh-my-zsh/themes/spaceship-prompt" --depth=1
@@ -72,7 +83,7 @@ else
 fi
 
 # Backup existing .zshrc and install new one
-echo -e "${YELLOW}[5/6] Installing .zshrc configuration...${NC}"
+echo -e "${YELLOW}[6/7] Installing .zshrc configuration...${NC}"
 if [ -f "$HOME/.zshrc" ]; then
     BACKUP_FILE="$HOME/.zshrc.backup.$(date +%Y%m%d_%H%M%S)"
     cp "$HOME/.zshrc" "$BACKUP_FILE"
@@ -92,7 +103,7 @@ else
 fi
 
 # Set zsh as the default shell
-echo -e "${YELLOW}[6/6] Setting zsh as default shell...${NC}"
+echo -e "${YELLOW}[7/7] Setting zsh as default shell...${NC}"
 ZSH_PATH=$(which zsh)
 if [ "$SHELL" != "$ZSH_PATH" ]; then
     read -p "Change default shell to zsh? (Y/n) " -n 1 -r
