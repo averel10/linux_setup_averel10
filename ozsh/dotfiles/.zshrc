@@ -91,6 +91,7 @@ setopt hist_reduce_blanks
 setopt inc_append_history
 
 SPACESHIP_PROMPT_ORDER=(
+  time
   user
   host
   dir
