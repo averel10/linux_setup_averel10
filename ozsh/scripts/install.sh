@@ -18,7 +18,7 @@ echo -e "${BLUE}Oh My Zsh Configuration Installer${NC}"
 echo -e "${BLUE}==================================${NC}\n"
 
 # Check if zsh is installed
-echo -e "${YELLOW}[1/5] Checking for zsh installation...${NC}"
+echo -e "${YELLOW}[1/6] Checking for zsh installation...${NC}"
 if ! command -v zsh &> /dev/null; then
     echo -e "${RED}✗ zsh is not installed${NC}"
     echo "Please install zsh first:"
@@ -72,7 +72,7 @@ else
 fi
 
 # Backup existing .zshrc and install new one
-echo -e "${YELLOW}[5/5] Installing .zshrc configuration...${NC}"
+echo -e "${YELLOW}[5/6] Installing .zshrc configuration...${NC}"
 if [ -f "$HOME/.zshrc" ]; then
     BACKUP_FILE="$HOME/.zshrc.backup.$(date +%Y%m%d_%H%M%S)"
     cp "$HOME/.zshrc" "$BACKUP_FILE"
@@ -91,12 +91,30 @@ else
     echo -e "${GREEN}✓ .zshrc.local already exists (not overwritten)${NC}"
 fi
 
+# Set zsh as the default shell
+echo -e "${YELLOW}[6/6] Setting zsh as default shell...${NC}"
+ZSH_PATH=$(which zsh)
+if [ "$SHELL" != "$ZSH_PATH" ]; then
+    read -p "Change default shell to zsh? (Y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        chsh -s "$ZSH_PATH"
+        echo -e "${GREEN}✓ Default shell changed to zsh${NC}"
+        echo -e "${YELLOW}  ℹ You may need to restart your terminal for this to take effect${NC}"
+    else
+        echo -e "${YELLOW}⚠ Shell not changed (zsh will need to be set as default manually)${NC}"
+    fi
+else
+    echo -e "${GREEN}✓ zsh is already the default shell${NC}"
+fi
+
 echo -e "\n${GREEN}==================================${NC}"
 echo -e "${GREEN}Installation Complete!${NC}"
 echo -e "${GREEN}==================================${NC}"
-echo -e "\nTo apply the new configuration, either:"
-echo -e "  1. Restart your terminal"
-echo -e "  2. Run: ${BLUE}source ~/.zshrc${NC}"
+echo -e "\nTo start using zsh, either:"
+echo -e "  1. ${BLUE}Restart your terminal${NC} (if you changed the default shell)"
+echo -e "  2. Run: ${BLUE}exec zsh${NC}"
+echo -e "  3. Run: ${BLUE}source ~/.zshrc${NC}"
 echo -e "\n${YELLOW}Configuration Files:${NC}"
 echo -e "  • ${BLUE}~/.zshrc${NC} - Main config (managed by this repo)"
 echo -e "  • ${BLUE}~/.zshrc.local${NC} - Your personal customizations (safe to edit)"
