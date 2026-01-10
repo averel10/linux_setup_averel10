@@ -77,6 +77,7 @@ plugins=(
 	docker-compose
 	zsh-autosuggestions
 	zsh-syntax-highlighting
+	command-not-found
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -129,7 +130,12 @@ alias gc='git commit'
 alias gco='git checkout'
 alias gp='git push'
 alias gl='git log --oneline --graph --decorate'
+alias mkd='mkdir -p'
+alias mkf='touch'
+alias grep='grep --color=auto'
 
+export CLICOLOR=1
+export LSCOLORS=ExFxBxDxCxegedabagacad
 
 # User configuration
 
