@@ -1,0 +1,7 @@
+# Local .zshrc customizations
+# This file is sourced at the end of .zshrc and won't be overwritten by updates
+# Add your personal aliases, functions, and customizations here
+
+# Example:
+# alias mycommand='echo "hello"'
+# export MY_VAR="value"
