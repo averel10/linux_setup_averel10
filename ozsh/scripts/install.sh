@@ -41,7 +41,7 @@ fi
 
 # Install fzf
 echo -e "${YELLOW}[3/7] Checking for fzf installation...${NC}"
-if ! command -v fzf &> /dev/null; then
+if [ ! -d "$HOME/.fzf" ]; then
     echo -e "${YELLOW}Installing fzf...${NC}"
     git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
     ~/.fzf/install --all --no-bash --no-fish
