@@ -106,15 +106,7 @@ fi
 echo -e "${YELLOW}[7/7] Setting zsh as default shell...${NC}"
 ZSH_PATH=$(which zsh)
 if [ "$SHELL" != "$ZSH_PATH" ]; then
-    read -p "Change default shell to zsh? (Y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-        chsh -s "$ZSH_PATH"
-        echo -e "${GREEN}✓ Default shell changed to zsh${NC}"
-        echo -e "${YELLOW}  ℹ You may need to restart your terminal for this to take effect${NC}"
-    else
-        echo -e "${YELLOW}⚠ Shell not changed (zsh will need to be set as default manually)${NC}"
-    fi
+    chsh -s "$ZSH_PATH"
 else
     echo -e "${GREEN}✓ zsh is already the default shell${NC}"
 fi
