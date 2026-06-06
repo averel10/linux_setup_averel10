@@ -106,7 +106,7 @@ fi
 echo -e "${YELLOW}[7/7] Setting zsh as default shell...${NC}"
 ZSH_PATH=$(which zsh)
 if [ "$SHELL" != "$ZSH_PATH" ]; then
-    chsh -s "$ZSH_PATH"
+    sudo chsh -s "$ZSH_PATH" "$USER"
 else
     echo -e "${GREEN}✓ zsh is already the default shell${NC}"
 fi
