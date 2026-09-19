@@ -1,0 +1,52 @@
+# Managed by linux_setup_averel10. Do not edit: local overrides go in
+# ~/.gitconfig.local, which is included at the bottom of this file.
+
+[init]
+	defaultBranch = main
+
+[core]
+	autocrlf = input
+	whitespace = fix,-indent-with-non-tab,trailing-space,space-before-tab
+	excludesfile = ~/.gitignore_global
+
+[color]
+	ui = auto
+
+[fetch]
+	prune = true
+
+[pull]
+	rebase = false
+
+[push]
+	default = current
+	autoSetupRemote = true
+
+[rebase]
+	autosquash = true
+
+[diff]
+	algorithm = histogram
+	colorMoved = default
+
+[merge]
+	conflictStyle = zdiff3
+
+[rerere]
+	enabled = true
+
+[alias]
+	st = status -sb
+	co = checkout
+	br = branch
+	ci = commit
+	lg = log --oneline --graph --decorate
+	last = log -1 HEAD --stat
+	unstage = reset HEAD --
+	amend = commit --amend --no-edit
+	who = shortlog -sn
+	root = rev-parse --show-toplevel
+
+# Keep last: personal identity and overrides live here.
+[include]
+	path = ~/.gitconfig.local

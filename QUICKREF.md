@@ -24,6 +24,9 @@
 # Install a component (direct)
 ./install.sh install ozsh
 
+# Install the git component
+./install.sh install git
+
 # Install all components
 ./install.sh install all
 
@@ -62,6 +65,7 @@ Choose an action (1-5/q):
 Available Components:
 
   1 - ozsh: Oh My Zsh - Spaceship prompt + plugins
+  2 - git: Git config, aliases, and sensible defaults
 
 Install Options:
 

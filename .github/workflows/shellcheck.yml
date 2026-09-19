@@ -15,9 +15,8 @@ jobs:
           shellcheck -x -P SCRIPTDIR
           install.sh
           lib/common.sh
-          ozsh/scripts/install.sh
-          ozsh/scripts/remove.sh
-          ozsh/scripts/doctor.sh
+          ozsh/scripts/*.sh
+          git/scripts/*.sh
           tests/run.sh
 
   tests:

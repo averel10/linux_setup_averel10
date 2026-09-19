@@ -13,6 +13,9 @@ This repository contains installable components for setting up a consistent deve
   - Syntax highlighting & auto-suggestions
   - Git integration
   - Docker/Kubernetes support
+- **[git](git/)** - Global Git configuration
+  - Sensible defaults, aliases, and a global ignore file
+  - Personal identity kept in `~/.gitconfig.local`
 
 ### Future Components
 
@@ -69,16 +72,28 @@ linux_setup_averel10/
 ├── QUICKREF.md             # Command cheat sheet
 ├── AGENTS.md               # Notes for AI coding agents
 │
-└── ozsh/                   # Oh My Zsh component
-    ├── component.conf      # Description + menu order (auto-discovery)
-    ├── README.md           # Component documentation
+├── ozsh/                   # Oh My Zsh component
+│   ├── component.conf      # Description + menu order (auto-discovery)
+│   ├── README.md           # Component documentation
+│   ├── dotfiles/
+│   │   ├── .zshrc          # Main configuration
+│   │   └── .zshrc.local    # Template for customizations
+│   └── scripts/
+│       ├── install.sh      # Component installer
+│       ├── remove.sh       # Component remover
+│       └── doctor.sh       # Component status report
+│
+└── git/                    # Git component
+    ├── component.conf
+    ├── README.md
     ├── dotfiles/
-    │   ├── .zshrc          # Main configuration
-    │   └── .zshrc.local    # Template for customizations
+    │   ├── .gitconfig
+    │   ├── .gitconfig.local
+    │   └── .gitignore_global
     └── scripts/
-        ├── install.sh      # Component installer
-        ├── remove.sh       # Component remover
-        └── doctor.sh       # Component status report
+        ├── install.sh
+        ├── remove.sh
+        └── doctor.sh
 ```
 
 ## Adding a Component
@@ -112,11 +127,21 @@ Beautiful shell configuration with:
 
 **[Learn more →](ozsh/README.md)**
 
+### Git (git)
+
+Managed global Git configuration with:
+- Sensible defaults (`init.defaultBranch`, `push.autoSetupRemote`, pruning, rerere)
+- Useful aliases and a global ignore file
+- Identity and overrides kept in `~/.gitconfig.local`
+
+**[Learn more →](git/README.md)**
+
 ## How to Use Each Component
 
 Each component has its own README with detailed instructions:
 
 1. [Oh My Zsh Setup](ozsh/README.md)
+2. [Git Setup](git/README.md)
 
 ## Installation Options
 

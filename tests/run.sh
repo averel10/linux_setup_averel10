@@ -24,6 +24,7 @@ assert_rc() { if [ "$1" -eq "$2" ]; then pass "$3"; else fail "$3 (expected rc=$
 assert_contains() { case "$2" in *"$1"*) pass "$3" ;; *) fail "$3 (missing '$1')" ;; esac; }
 assert_exists() { if [ -e "$1" ]; then pass "$2"; else fail "$2 (missing $1)"; fi; }
 assert_absent() { if [ -e "$1" ]; then fail "$2 (still present: $1)"; else pass "$2"; fi; }
+strip_ansi() { printf '%s' "$1" | sed 's/\x1b\[[0-9;]*m//g'; }
 
 HOME_DIR=""
 OUT=""
@@ -68,6 +69,10 @@ make_home
 run_noinput "$INSTALL" list
 assert_rc 0 "$RC" "list exits 0"
 assert_contains "ozsh" "$OUT" "list shows ozsh"
+assert_contains "git" "$OUT" "list shows git"
+PLAIN="$(strip_ansi "$OUT")"
+assert_contains "1 - ozsh" "$PLAIN" "ozsh is menu item 1"
+assert_contains "2 - git" "$PLAIN" "git is menu item 2"
 
 run_noinput "$INSTALL" --help
 assert_rc 0 "$RC" "help exits 0"
@@ -111,8 +116,19 @@ fi
 # --- idempotent re-run and doctor ---
 run_noinput "$INSTALL" install ozsh
 assert_rc 0 "$RC" "re-install exits 0"
+run_noinput "$REPO_DIR/ozsh/scripts/doctor.sh"
+assert_rc 0 "$RC" "ozsh doctor passes after install"
+
+# --- git component ---
+run_noinput "$INSTALL" install git
+assert_rc 0 "$RC" "install git exits 0"
+assert_exists "$HOME_DIR/.gitconfig" "gitconfig installed"
+assert_exists "$HOME_DIR/.gitconfig.local" "gitconfig.local installed"
+assert_exists "$HOME_DIR/.gitignore_global" "global gitignore installed"
 run_noinput "$INSTALL" doctor
-assert_rc 0 "$RC" "doctor passes after install"
+assert_rc 0 "$RC" "doctor passes with git installed"
+PLAIN="$(strip_ansi "$OUT")"
+assert_contains "== git ==" "$PLAIN" "doctor reports the git component"
 
 # --- remove keeps files the user declines to delete ---
 run $'y\nn\nn\nn\nn\nn\n' "$INSTALL" remove ozsh
@@ -120,6 +136,12 @@ assert_rc 0 "$RC" "remove ozsh exits 0"
 assert_absent "$HOME_DIR/.oh-my-zsh/custom/plugins/zsh-autosuggestions" "remove deletes custom plugin"
 assert_exists "$HOME_DIR/.oh-my-zsh" "remove keeps Oh My Zsh dir by default"
 assert_exists "$HOME_DIR/.zshrc.local" "remove keeps .zshrc.local when declined"
+
+# --- remove git keeps files the user declines to delete ---
+run $'y\nn\nn\nn\n' "$INSTALL" remove git
+assert_rc 0 "$RC" "remove git exits 0"
+assert_exists "$HOME_DIR/.gitconfig" "remove git keeps .gitconfig when declined"
+assert_exists "$HOME_DIR/.gitconfig.local" "remove git keeps .gitconfig.local when declined"
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

@@ -1,0 +1,9 @@
+# Global Git ignore, referenced by ~/.gitconfig (core.excludesfile).
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/

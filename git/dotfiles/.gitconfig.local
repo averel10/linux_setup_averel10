@@ -1,0 +1,7 @@
+# Local Git identity and overrides. Not managed by linux_setup_averel10.
+# The installer prompts for these on a fresh setup; edit or add anything else
+# here and it will be preserved across updates.
+#
+# [user]
+#	name = Your Name
+#	email = you@example.com
