@@ -9,6 +9,12 @@
 # List available components
 ./install.sh list
 
+# Report component status
+./install.sh doctor
+
+# Preview without changing anything
+./install.sh --dry-run install all
+
 # Interactive main menu
 ./install.sh
 
@@ -46,8 +52,9 @@ Select an action:
   2 - Remove components
   3 - List components
   4 - Show help
+  5 - Doctor
   q - Quit
-Choose an action (1-4/q):
+Choose an action (1-5/q):
 ```
 
 ### Install / Remove Menu
@@ -67,6 +74,7 @@ Select component(s) to install (numbers separated by spaces, a, q):
 ## Environment Variables
 
 - `SETUP_QUIET=1` - suppress status output (set automatically by `--quiet`).
+- `SETUP_DRY_RUN=1` - print planned actions without changing anything (set by `--dry-run`).
 - `ZSH` - path to the Oh My Zsh checkout; defaults to `~/.oh-my-zsh`.
 - `ZSH_CUSTOM` - custom plugins/themes directory; defaults to `$ZSH/custom`.
 

@@ -2,41 +2,10 @@
 
 set -u
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-QUIET="${SETUP_QUIET:-0}"
-say() {
-    [ "$QUIET" = "1" ] || echo -e "$@"
-}
-
-# Read a whole line so the trailing newline is not left for the next prompt.
-# Usage: ask_yes_no "Question?" n   (defaults to no)
-ask_yes_no() {
-    local prompt=$1 default=${2:-n} reply
-    read -r -p "$prompt " reply || true
-    case $default in
-        y|Y) [[ ! $reply =~ ^[Nn]$ ]] ;;
-        *)   [[ $reply =~ ^[Yy]$ ]] ;;
-    esac
-}
-
-# Run a command as root, using sudo only when not already root.
-run_root() {
-    if [ "$(id -u)" -eq 0 ]; then
-        "$@"
-    else
-        if ! command -v sudo >/dev/null 2>&1; then
-            say "${RED}✗ This step requires root or sudo, which was not found${NC}"
-            return 1
-        fi
-        sudo "$@"
-    fi
-}
+# shellcheck source=../../lib/common.sh
+. "$SCRIPT_DIR/../../lib/common.sh"
 
 # Third-party plugins/themes live in $ZSH_CUSTOM. Never delete paths tracked
 # by the Oh My Zsh repo itself.
@@ -47,6 +16,13 @@ is_tracked() { git -C "$ZSH_DIR" ls-files --error-unmatch "$1" >/dev/null 2>&1; 
 say "${BLUE}==================================${NC}"
 say "${BLUE}Oh My Zsh Configuration Remover${NC}"
 say "${BLUE}==================================${NC}\n"
+
+if [ "$SETUP_DRY_RUN" = "1" ]; then
+    say "[dry-run] ZSH_DIR=$ZSH_DIR ZSH_CUSTOM=$ZSH_CUSTOM"
+    say "[dry-run] Would offer to: restore ~/.zshrc, remove ~/.zshrc.local,"
+    say "[dry-run] remove plugins/theme, remove ~/.fzf, restore bash, delete $ZSH_DIR."
+    exit 0
+fi
 
 if ! ask_yes_no "Are you sure you want to remove the Oh My Zsh setup? (y/N)" n; then
     say "${YELLOW}Cancelled.${NC}"
@@ -77,8 +53,7 @@ fi
 say "${YELLOW}[2/7] Handling .zshrc.local...${NC}"
 if [ -f "$HOME/.zshrc.local" ]; then
     if ask_yes_no "Backup and remove .zshrc.local (personal customizations)? (Y/n)" y; then
-        BACKUP_FILE="$HOME/.zshrc.local.backup.$(date +%Y%m%d_%H%M%S)"
-        cp "$HOME/.zshrc.local" "$BACKUP_FILE"
+        BACKUP_FILE="$(backup_path "$HOME/.zshrc.local")"
         rm -f "$HOME/.zshrc.local"
         say "${GREEN}✓ .zshrc.local backed up to $BACKUP_FILE and removed${NC}"
     else
@@ -125,12 +100,12 @@ fi
 say "${YELLOW}[6/7] Checking default shell...${NC}"
 CURRENT_USER="$(id -un)"
 CURRENT_SHELL="$(getent passwd "$CURRENT_USER" 2>/dev/null | cut -d: -f7 || true)"
-if [ -n "$CURRENT_SHELL" ] && [ "$(basename "$CURRENT_SHELL")" = "zsh" ] && command -v bash >/dev/null 2>&1; then
+if [ -n "$CURRENT_SHELL" ] && [ "$(basename "$CURRENT_SHELL")" = "zsh" ] && have_cmd bash; then
     if ask_yes_no "Restore default shell to bash? (y/N)" n; then
         if run_root chsh -s "$(command -v bash)" "$CURRENT_USER"; then
             say "${GREEN}✓ Default shell restored to bash${NC}"
         else
-            say "${YELLOW}Could not change the default shell${NC}"
+            warn "Could not change the default shell"
         fi
     else
         say "${YELLOW}Keeping zsh as the default shell${NC}"

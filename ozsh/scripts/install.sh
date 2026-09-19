@@ -2,69 +2,37 @@
 
 set -euo pipefail
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-QUIET="${SETUP_QUIET:-0}"
-say() {
-    [ "$QUIET" = "1" ] || echo -e "$@"
-}
-
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=../../lib/common.sh
+. "$SCRIPT_DIR/../../lib/common.sh"
 
 # Location of the Oh My Zsh checkout. Third-party plugins/themes go in
 # $ZSH_CUSTOM (gitignored), never directly in the checkout.
 ZSH_DIR="${ZSH:-$HOME/.oh-my-zsh}"
 ZSH_CUSTOM="${ZSH_CUSTOM:-$ZSH_DIR/custom}"
 
-# Run a command as root, using sudo only when not already root.
-run_root() {
-    if [ "$(id -u)" -eq 0 ]; then
-        "$@"
-    else
-        if ! command -v sudo >/dev/null 2>&1; then
-            say "${RED}✗ This step requires root or sudo, which was not found${NC}"
-            exit 1
-        fi
-        sudo "$@"
-    fi
-}
+# Paths tracked by the Oh My Zsh repo itself must never be moved or deleted.
+is_tracked() { git -C "$ZSH_DIR" ls-files --error-unmatch "$1" >/dev/null 2>&1; }
 
 say "${BLUE}==================================${NC}"
 say "${BLUE}Oh My Zsh Configuration Installer${NC}"
 say "${BLUE}==================================${NC}\n"
 
-# Install zsh via the available package manager.
-install_zsh() {
-    say "${YELLOW}Attempting to install zsh...${NC}"
-    if command -v apt-get >/dev/null 2>&1; then
-        run_root apt-get update
-        run_root apt-get install -y zsh
-    elif command -v dnf >/dev/null 2>&1; then
-        run_root dnf install -y zsh
-    elif command -v yum >/dev/null 2>&1; then
-        run_root yum install -y zsh
-    elif command -v pacman >/dev/null 2>&1; then
-        run_root pacman -Sy --noconfirm zsh
-    elif command -v brew >/dev/null 2>&1; then
-        brew install zsh
-    else
-        say "${RED}✗ Could not detect a package manager to install zsh${NC}"
-        say "Please install zsh manually, then re-run this script."
-        exit 1
-    fi
-}
+if [ "$SETUP_DRY_RUN" = "1" ]; then
+    say "[dry-run] ZSH_DIR=$ZSH_DIR ZSH_CUSTOM=$ZSH_CUSTOM"
+    say "[dry-run] Would ensure: zsh, Oh My Zsh, fzf, zsh-autosuggestions,"
+    say "[dry-run] zsh-syntax-highlighting, spaceship theme, ~/.zshrc, zsh login shell."
+    exit 0
+fi
 
 # Check if zsh is installed
 say "${YELLOW}[1/7] Checking for zsh installation...${NC}"
-if ! command -v zsh >/dev/null 2>&1; then
-    say "${RED}✗ zsh is not installed${NC}"
-    install_zsh
+if ! have_cmd zsh; then
+    say "${YELLOW}zsh is not installed; installing it...${NC}"
+    pkg_update
+    pkg_install zsh
 fi
 ZSH_PATH="$(command -v zsh)"
 say "${GREEN}✓ zsh found at $ZSH_PATH${NC}"
@@ -93,8 +61,6 @@ fi
 # Install plugins into $ZSH_CUSTOM (NOT the Oh My Zsh git checkout).
 # Cloning into $ZSH/plugins creates untracked files that make `omz update`
 # abort with "untracked working tree files would be overwritten by merge".
-is_tracked() { git -C "$ZSH_DIR" ls-files --error-unmatch "$1" >/dev/null 2>&1; }
-
 install_plugin() {
     local name="$1" url="$2"
     # Migrate a legacy untracked clone out of the Oh My Zsh checkout.
@@ -146,9 +112,8 @@ ln -sf "$ZSH_CUSTOM/themes/spaceship-prompt/spaceship.zsh-theme" "$ZSH_CUSTOM/th
 
 # Backup existing .zshrc and install new one
 say "${YELLOW}[6/7] Installing .zshrc configuration...${NC}"
-if [ -f "$HOME/.zshrc" ]; then
-    BACKUP_FILE="$HOME/.zshrc.backup.$(date +%Y%m%d_%H%M%S)"
-    cp "$HOME/.zshrc" "$BACKUP_FILE"
+BACKUP_FILE="$(backup_path "$HOME/.zshrc")"
+if [ -n "$BACKUP_FILE" ]; then
     say "${YELLOW}  ⚠ Existing .zshrc backed up to: $BACKUP_FILE${NC}"
 fi
 

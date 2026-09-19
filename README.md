@@ -59,26 +59,43 @@ Show help:
 
 ```
 linux_setup_averel10/
-├── install.sh              # Main installer with component menu
-├── README.md               # This file
+├── install.sh              # Auto-discovering component CLI
+├── lib/
+│   └── common.sh           # Shared helpers (say, ask_yes_no, run_root, pkg_*)
+├── tests/
+│   └── run.sh              # Hermetic test suite
+├── .github/workflows/      # shellcheck + tests CI
+├── README.md
 ├── QUICKREF.md             # Command cheat sheet
 ├── AGENTS.md               # Notes for AI coding agents
 │
 └── ozsh/                   # Oh My Zsh component
+    ├── component.conf      # Description + menu order (auto-discovery)
     ├── README.md           # Component documentation
     ├── dotfiles/
     │   ├── .zshrc          # Main configuration
     │   └── .zshrc.local    # Template for customizations
     └── scripts/
         ├── install.sh      # Component installer
-        └── remove.sh       # Component remover
+        ├── remove.sh       # Component remover
+        └── doctor.sh       # Component status report
 ```
 
 ## Adding a Component
 
-Components are registered in `install.sh` in three places: the `COMPONENT_ORDER`
-array, the `COMPONENTS` map, and the `install_component`/`remove_component`
-case statements. Third-party Oh My Zsh plugins and themes are installed under
+Components are auto-discovered: any directory containing a `component.conf`
+becomes a component, with no changes to `install.sh`. A manifest sets:
+
+```bash
+COMPONENT_DESCRIPTION="What it does"
+COMPONENT_ORDER=20            # lower numbers appear first
+```
+
+The directory then provides `scripts/install.sh`, `scripts/remove.sh`, an
+optional `scripts/doctor.sh`, `dotfiles/`, and a `README.md`. Component scripts
+source `lib/common.sh` for shared helpers.
+
+Oh My Zsh third-party plugins and themes are installed under
 `~/.oh-my-zsh/custom/`, never inside the Oh My Zsh git checkout, so `omz update`
 never fights with untracked files.
 
@@ -114,6 +131,7 @@ Main menu with options to:
 - Remove components
 - List components
 - Show help
+- Run doctor
 
 ### Command Line Arguments
 
@@ -134,9 +152,15 @@ Main menu with options to:
 **Utility Commands:**
 ```bash
 ./install.sh list                 # List available components
+./install.sh doctor               # Report the state of each component
 ./install.sh help                 # Show help and usage
 ./install.sh -h                   # Alternative help
 ./install.sh --help               # Alternative help
+```
+
+**Previewing changes:**
+```bash
+./install.sh --dry-run install all   # Print planned actions, change nothing
 ```
 
 **Options:**
@@ -210,11 +234,17 @@ Tested on:
 
 To add a new component:
 
-1. Create a new folder: `<component-name>/`
-2. Add `dotfiles/` and `scripts/` subdirectories
-3. Create `install.sh` and `remove.sh` scripts
-4. Add `README.md` with component documentation
-5. Update the main `install.sh` to include the new component
+1. Create a folder: `<component-name>/`
+2. Add a `component.conf` with `COMPONENT_DESCRIPTION` and `COMPONENT_ORDER`
+3. Add `scripts/install.sh` and `scripts/remove.sh` (source `lib/common.sh`)
+4. Add `dotfiles/`, an optional `scripts/doctor.sh`, and a `README.md`
+
+No changes to `install.sh` are needed. Before committing, run:
+
+```bash
+shellcheck -x -P SCRIPTDIR install.sh lib/common.sh ozsh/scripts/*.sh tests/run.sh
+bash tests/run.sh
+```
 
 ## License
 

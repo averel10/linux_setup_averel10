@@ -11,4 +11,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run shellcheck
-        run: shellcheck -x install.sh ozsh/scripts/install.sh ozsh/scripts/remove.sh
+        run: >-
+          shellcheck -x -P SCRIPTDIR
+          install.sh
+          lib/common.sh
+          ozsh/scripts/install.sh
+          ozsh/scripts/remove.sh
+          ozsh/scripts/doctor.sh
+          tests/run.sh
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run test suite
+        run: bash tests/run.sh
