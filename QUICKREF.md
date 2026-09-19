@@ -12,24 +12,30 @@
 # Interactive main menu
 ./install.sh
 
-# Install Oh My Zsh (interactive)
+# Install (interactive)
 ./install.sh install
 
-# Install Oh My Zsh (direct)
+# Install a component (direct)
 ./install.sh install ozsh
 
 # Install all components
 ./install.sh install all
 
-# Remove Oh My Zsh (interactive)
+# Remove (interactive)
 ./install.sh remove
 
-# Remove Oh My Zsh (direct)
+# Remove a component (direct)
 ./install.sh remove ozsh
 
 # Remove all components
 ./install.sh remove all
+
+# Suppress status output
+./install.sh --quiet install all
 ```
+
+The interactive install/remove menu accepts one or more component numbers
+(space or comma separated), `a` for all, or `q` to cancel.
 
 ## Menu Examples
 
@@ -41,37 +47,28 @@ Select an action:
   3 - List components
   4 - Show help
   q - Quit
+Choose an action (1-4/q):
 ```
 
-### Install Menu
+### Install / Remove Menu
 ```
 Available Components:
+
   1 - ozsh: Oh My Zsh - Spaceship prompt + plugins
 
-Installation Options:
+Install Options:
+
   a - install all components
   q - Quit without install
 
-Select component(s) to install (1/a/q):
-```
-
-### Remove Menu
-```
-Available Components:
-  1 - ozsh: Oh My Zsh - Spaceship prompt + plugins
-
-Removal Options:
-  a - remove all components
-  q - Quit without remove
-
-Select component(s) to remove (1/a/q):
+Select component(s) to install (numbers separated by spaces, a, q):
 ```
 
 ## Environment Variables
 
-Currently no special environment variables required, but the CLI is designed to support:
-- `--quiet` flag for suppressed output (future enhancement)
-- Component-specific configs in `~/.zshrc.local` (ozsh)
+- `SETUP_QUIET=1` - suppress status output (set automatically by `--quiet`).
+- `ZSH` - path to the Oh My Zsh checkout; defaults to `~/.oh-my-zsh`.
+- `ZSH_CUSTOM` - custom plugins/themes directory; defaults to `$ZSH/custom`.
 
 ## Troubleshooting
 
@@ -84,3 +81,7 @@ chmod +x ozsh/scripts/*.sh
 If colors aren't working:
 - The script uses standard ANSI color codes
 - Most modern terminals support these automatically
+
+If `omz update` complains about untracked files in `~/.oh-my-zsh/plugins` or
+`~/.oh-my-zsh/themes`, re-run the component installer: it moves legacy
+third-party clones into `~/.oh-my-zsh/custom/`.

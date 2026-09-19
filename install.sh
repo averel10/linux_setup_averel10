@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -u
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -11,10 +13,30 @@ NC='\033[0m' # No Color
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Available components
+# Components must be listed in COMPONENT_ORDER (menu numbering follows it) and
+# described in COMPONENTS. Both are used by list_components/install_all.
+COMPONENT_ORDER=(ozsh)
 declare -A COMPONENTS=(
     [ozsh]="Oh My Zsh - Spaceship prompt + plugins"
 )
+
+QUIET=0
+
+# Print a status/decorative message unless --quiet was passed.
+say() {
+    [ "$QUIET" -eq 1 ] || echo -e "$@"
+}
+
+# Read a whole line so the trailing newline is not left for the next prompt.
+# Usage: ask_yes_no "Question?" n   (defaults to no)
+ask_yes_no() {
+    local prompt=$1 default=${2:-n} reply
+    read -r -p "$prompt " reply || true
+    case $default in
+        y|Y) [[ ! $reply =~ ^[Nn]$ ]] ;;
+        *)   [[ $reply =~ ^[Yy]$ ]] ;;
+    esac
+}
 
 # Functions
 show_help() {
@@ -24,7 +46,7 @@ ${BLUE}║        Linux Setup - Component Management CLI             ║${NC}
 ${BLUE}╚══════════════════════════════════════════════════════════╝${NC}
 
 ${CYAN}USAGE:${NC}
-  $(basename "$0") [COMMAND] [OPTIONS]
+  $(basename "$0") [COMMAND] [COMPONENT] [OPTIONS]
 
 ${CYAN}COMMANDS:${NC}
   install [COMPONENT]   Install component(s)
@@ -33,7 +55,7 @@ ${CYAN}COMMANDS:${NC}
   help                  Show this help message
 
 ${CYAN}COMPONENTS:${NC}
-  ozsh                  Oh My Zsh with Spaceship prompt
+$(for c in "${COMPONENT_ORDER[@]}"; do echo "  $c"; done)
   all                   All components
 
 ${CYAN}EXAMPLES:${NC}
@@ -45,50 +67,75 @@ ${CYAN}EXAMPLES:${NC}
 
 ${CYAN}OPTIONS:${NC}
   -h, --help            Show this help message
-  -q, --quiet           Suppress output messages
-
+  -q, --quiet           Suppress status output
 EOF
 }
 
 list_components() {
     echo -e "${CYAN}Available Components:${NC}\n"
-    local i=1
-    for component in "${!COMPONENTS[@]}"; do
-        echo -e "  ${BLUE}$i${NC} - ${component}: ${COMPONENTS[$component]}"
-        ((i++))
+    local i
+    for (( i=0; i<${#COMPONENT_ORDER[@]}; i++ )); do
+        echo -e "  ${BLUE}$((i+1))${NC} - ${COMPONENT_ORDER[$i]}: ${COMPONENTS[${COMPONENT_ORDER[$i]}]}"
     done
     echo
 }
 
-show_menu() {
+# Populate the global CHOSEN array from the user's interactive selection.
+# Returns 0 on success, 2 to quit, 1 on invalid input.
+choose_components() {
     local mode=$1
     list_components
-    
-    if [ "$mode" = "install" ]; then
-        echo -e "${YELLOW}Installation Options:${NC}\n"
-        echo -e "  ${BLUE}a${NC} - $mode all components"
-        echo -e "  ${BLUE}q${NC} - Quit without $mode\n"
-        read -p "Select component(s) to $mode (1/a/q): " -n 1 -r
-    else
-        echo -e "${YELLOW}Removal Options:${NC}\n"
-        echo -e "  ${BLUE}a${NC} - $mode all components"
-        echo -e "  ${BLUE}q${NC} - Quit without $mode\n"
-        read -p "Select component(s) to $mode (1/a/q): " -n 1 -r
+
+    say "${YELLOW}${mode^} Options:${NC}\n"
+    say "  ${BLUE}a${NC} - $mode all components"
+    say "  ${BLUE}q${NC} - Quit without $mode\n"
+
+    local input
+    read -r -p "Select component(s) to $mode (numbers separated by spaces, a, q): " input || true
+    input="${input//,/ }"
+
+    CHOSEN=()
+    local token
+    for token in $input; do
+        case $token in
+            a|all)
+                CHOSEN=("${COMPONENT_ORDER[@]}")
+                return 0
+                ;;
+            q|quit)
+                return 2
+                ;;
+            ''|*[!0-9]*)
+                say "${RED}✗ Invalid selection: '$token'${NC}"
+                return 1
+                ;;
+            *)
+                if (( token >= 1 && token <= ${#COMPONENT_ORDER[@]} )); then
+                    CHOSEN+=("${COMPONENT_ORDER[$((token-1))]}")
+                else
+                    say "${RED}✗ Invalid selection: '$token'${NC}"
+                    return 1
+                fi
+                ;;
+        esac
+    done
+
+    if [ ${#CHOSEN[@]} -eq 0 ]; then
+        say "${RED}✗ No components selected${NC}"
+        return 1
     fi
-    
-    echo -e "\n"
 }
 
 install_component() {
     local component=$1
-    
+
     case $component in
         ozsh)
-            echo -e "${YELLOW}Installing Oh My Zsh setup...${NC}\n"
-            bash "$SCRIPT_DIR/ozsh/scripts/install.sh"
+            say "${YELLOW}Installing Oh My Zsh setup...${NC}\n"
+            SETUP_QUIET=$QUIET bash "$SCRIPT_DIR/ozsh/scripts/install.sh"
             ;;
         *)
-            echo -e "${RED}✗ Unknown component: $component${NC}"
+            say "${RED}✗ Unknown component: $component${NC}"
             return 1
             ;;
     esac
@@ -96,113 +143,123 @@ install_component() {
 
 remove_component() {
     local component=$1
-    
+
     case $component in
         ozsh)
-            echo -e "${YELLOW}Removing Oh My Zsh setup...${NC}\n"
-            bash "$SCRIPT_DIR/ozsh/scripts/remove.sh"
+            say "${YELLOW}Removing Oh My Zsh setup...${NC}\n"
+            SETUP_QUIET=$QUIET bash "$SCRIPT_DIR/ozsh/scripts/remove.sh"
             ;;
         *)
-            echo -e "${RED}✗ Unknown component: $component${NC}"
+            say "${RED}✗ Unknown component: $component${NC}"
             return 1
             ;;
     esac
 }
 
 install_all() {
-    echo -e "${YELLOW}Installing all components...${NC}\n"
-    for component in "${!COMPONENTS[@]}"; do
-        echo -e "${BLUE}→ Installing ${component}${NC}"
-        install_component "$component"
+    say "${YELLOW}Installing all components...${NC}\n"
+    local component rc=0
+    for component in "${COMPONENT_ORDER[@]}"; do
+        say "${BLUE}→ Installing ${component}${NC}"
+        install_component "$component" || rc=1
     done
+    return $rc
 }
 
 remove_all() {
-    echo -e "${YELLOW}Removing all components...${NC}\n"
-    read -p "Are you sure? This will remove all components (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}Cancelled.${NC}"
+    say "${YELLOW}Removing all components...${NC}\n"
+    if ! ask_yes_no "Are you sure? This will remove all components (y/N):" n; then
+        say "${YELLOW}Cancelled.${NC}"
         return 0
     fi
-    
-    for component in "${!COMPONENTS[@]}"; do
-        echo -e "${BLUE}→ Removing ${component}${NC}"
-        remove_component "$component"
+
+    local component rc=0
+    for component in "${COMPONENT_ORDER[@]}"; do
+        say "${BLUE}→ Removing ${component}${NC}"
+        remove_component "$component" || rc=1
     done
+    return $rc
 }
 
 show_success() {
     local action=$1
-    echo -e "\n${GREEN}╔══════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}║      ${action^} Complete!${NC}"
-    echo -e "${GREEN}╚══════════════════════════════════════════════════════════╝${NC}\n"
+    say "\n${GREEN}╔══════════════════════════════════════════════════════════╗${NC}"
+    say "${GREEN}║      ${action^} Complete!${NC}"
+    say "${GREEN}╚══════════════════════════════════════════════════════════╝${NC}\n"
+}
+
+show_failure() {
+    local action=$1
+    say "\n${RED}✗ ${action^} failed. See the output above for details.${NC}\n"
 }
 
 # Main logic
 main() {
     local command=${1:-}
     local component=${2:-}
-    
+    local rc=0
+
     case $command in
         install)
             if [ -z "$component" ]; then
-                show_menu "install"
-                case $REPLY in
-                    1)
-                        install_component "ozsh"
-                        show_success "installation"
+                choose_components "install"
+                case $? in
+                    0)
+                        local c
+                        for c in "${CHOSEN[@]}"; do
+                            install_component "$c" || rc=1
+                        done
                         ;;
-                    a)
-                        install_all
-                        show_success "installation"
-                        ;;
-                    q)
-                        echo -e "${YELLOW}Cancelled.${NC}"
+                    2)
+                        say "${YELLOW}Cancelled.${NC}"
                         exit 0
                         ;;
                     *)
-                        echo -e "${RED}✗ Invalid option${NC}"
                         exit 1
                         ;;
                 esac
+            elif [ "$component" = "all" ]; then
+                install_all || rc=1
             else
-                if [ "$component" = "all" ]; then
-                    install_all
-                else
-                    install_component "$component"
-                fi
+                install_component "$component" || rc=1
+            fi
+
+            if [ $rc -eq 0 ]; then
                 show_success "installation"
+            else
+                show_failure "installation"
+                exit 1
             fi
             ;;
         remove)
             if [ -z "$component" ]; then
-                show_menu "remove"
-                case $REPLY in
-                    1)
-                        remove_component "ozsh"
-                        show_success "removal"
+                choose_components "remove"
+                case $? in
+                    0)
+                        local c
+                        for c in "${CHOSEN[@]}"; do
+                            remove_component "$c" || rc=1
+                        done
                         ;;
-                    a)
-                        remove_all
-                        show_success "removal"
-                        ;;
-                    q)
-                        echo -e "${YELLOW}Cancelled.${NC}"
+                    2)
+                        say "${YELLOW}Cancelled.${NC}"
                         exit 0
                         ;;
                     *)
-                        echo -e "${RED}✗ Invalid option${NC}"
                         exit 1
                         ;;
                 esac
+            elif [ "$component" = "all" ]; then
+                remove_all || rc=1
             else
-                if [ "$component" = "all" ]; then
-                    remove_all
-                else
-                    remove_component "$component"
-                fi
+                remove_component "$component" || rc=1
+            fi
+
+            if [ $rc -eq 0 ]; then
                 show_success "removal"
+            else
+                show_failure "removal"
+                exit 1
             fi
             ;;
         list)
@@ -216,18 +273,19 @@ main() {
             echo -e "${BLUE}╔══════════════════════════════════════════════════════════╗${NC}"
             echo -e "${BLUE}║     Linux Setup - Component Management${NC}"
             echo -e "${BLUE}╚══════════════════════════════════════════════════════════╝${NC}\n"
-            
-            echo -e "${YELLOW}Select an action:${NC}\n"
-            echo -e "  ${BLUE}1${NC} - Install components"
-            echo -e "  ${BLUE}2${NC} - Remove components"
-            echo -e "  ${BLUE}3${NC} - List components"
-            echo -e "  ${BLUE}4${NC} - Show help"
-            echo -e "  ${BLUE}q${NC} - Quit\n"
-            
-            read -p "Choose an action (1-4/q): " -n 1 -r
+
+            say "${YELLOW}Select an action:${NC}\n"
+            say "  ${BLUE}1${NC} - Install components"
+            say "  ${BLUE}2${NC} - Remove components"
+            say "  ${BLUE}3${NC} - List components"
+            say "  ${BLUE}4${NC} - Show help"
+            say "  ${BLUE}q${NC} - Quit\n"
+
+            local reply
+            read -r -p "Choose an action (1-4/q): " reply || true
             echo -e "\n"
-            
-            case $REPLY in
+
+            case $reply in
                 1)
                     main install
                     ;;
@@ -241,11 +299,11 @@ main() {
                     main help
                     ;;
                 q)
-                    echo -e "${YELLOW}Goodbye!${NC}"
+                    say "${YELLOW}Goodbye!${NC}"
                     exit 0
                     ;;
                 *)
-                    echo -e "${RED}✗ Invalid option${NC}"
+                    say "${RED}✗ Invalid option${NC}"
                     exit 1
                     ;;
             esac
@@ -258,5 +316,23 @@ main() {
     esac
 }
 
-# Run main function
-main "$@"
+# Parse global options, then dispatch.
+ARGS=()
+while [ $# -gt 0 ]; do
+    case $1 in
+        -q|--quiet)
+            QUIET=1
+            shift
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+main ${ARGS[@]+"${ARGS[@]}"}

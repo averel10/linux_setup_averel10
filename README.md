@@ -61,19 +61,26 @@ Show help:
 linux_setup_averel10/
 ├── install.sh              # Main installer with component menu
 ├── README.md               # This file
+├── QUICKREF.md             # Command cheat sheet
+├── AGENTS.md               # Notes for AI coding agents
 │
-├── ozsh/                   # Oh My Zsh component
-│   ├── dotfiles/
-│   │   ├── .zshrc          # Main configuration
-│   │   └── .zshrc.local    # Template for customizations
-│   ├── scripts/
-│   │   ├── install.sh      # Component installer
-│   │   └── remove.sh       # Component remover
-│   └── README.md           # Component documentation
-│
-├── dotfiles/               # (legacy - being phased out)
-└── scripts/                # (legacy - being phased out)
+└── ozsh/                   # Oh My Zsh component
+    ├── README.md           # Component documentation
+    ├── dotfiles/
+    │   ├── .zshrc          # Main configuration
+    │   └── .zshrc.local    # Template for customizations
+    └── scripts/
+        ├── install.sh      # Component installer
+        └── remove.sh       # Component remover
 ```
+
+## Adding a Component
+
+Components are registered in `install.sh` in three places: the `COMPONENT_ORDER`
+array, the `COMPONENTS` map, and the `install_component`/`remove_component`
+case statements. Third-party Oh My Zsh plugins and themes are installed under
+`~/.oh-my-zsh/custom/`, never inside the Oh My Zsh git checkout, so `omz update`
+never fights with untracked files.
 
 ## Components
 
@@ -132,6 +139,18 @@ Main menu with options to:
 ./install.sh --help               # Alternative help
 ```
 
+**Options:**
+```bash
+./install.sh -q install all       # Suppress status output
+./install.sh --quiet remove ozsh  # Same as -q
+```
+
+`--quiet` suppresses status/decorative output (including component scripts) but
+still prints requested data such as `list`.
+
+The interactive install/remove menus accept one or more component numbers
+(space or comma separated), `a` for all, or `q` to cancel.
+
 ## Personalization
 
 Most components support local customizations that persist across updates:
@@ -167,7 +186,9 @@ Each component can be safely removed:
 ./install.sh remove
 ```
 
-Removal scripts will optionally backup your configurations before removing.
+Removal prompts before restoring `.zshrc`, deleting `~/.zshrc.local`, removing
+`~/.fzf`, restoring your login shell to bash, and deleting `~/.oh-my-zsh`.
+`~/.zshrc.local` is only deleted if you accept the backup; otherwise it is kept.
 
 ## Prerequisites
 
@@ -175,6 +196,7 @@ Depends on the component, but generally:
 - `bash` or `zsh` shell
 - `git`
 - `curl` (for remote installations)
+- `sudo` (Oh My Zsh: installs zsh and changes the login shell)
 
 ## Platform Support
 
