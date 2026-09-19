@@ -28,6 +28,7 @@ Then create `<component>/scripts/{install.sh,remove.sh}` and `<component>/dotfil
 
 - Installing `ozsh` overwrites `~/.zshrc` (backing it up to `~/.zshrc.backup.<timestamp>` first) and runs `sudo chsh -s` to change the login shell. `~/.zshrc.local` is the only user-editable file preserved across installs.
 - `ozsh/scripts/remove.sh` unconditionally deletes `~/.zshrc.local` after offering a backup.
+- Third-party plugins/themes (zsh-autosuggestions, zsh-syntax-highlighting, spaceship) must be installed under `~/.oh-my-zsh/custom/`, never `~/.oh-my-zsh/plugins` or `~/.oh-my-zsh/themes`. Cloning into the latter creates untracked files that make `omz update` abort ("untracked working tree files would be overwritten by merge"). The install script migrates legacy clones out of the Oh My Zsh checkout; `remove.sh` only deletes copies it owns (checks `git ls-files` first).
 - Installer needs network access (`curl`, `git clone`) and `sudo`.
 - `ozsh/scripts/install.sh` uses `set -e`; the top-level `install.sh` does not.
 - README/QUICKREF reference `ozsh/README.md` and legacy `dotfiles/`/`scripts/` dirs that do not exist. Trust the actual files, not the docs.

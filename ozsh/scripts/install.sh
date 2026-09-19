@@ -50,37 +50,63 @@ else
     echo -e "${GREEN}✓ fzf already installed${NC}"
 fi
 
+# Third-party plugins/themes go in $ZSH_CUSTOM, never in the Oh My Zsh git
+# checkout. Cloning into $ZSH/plugins or $ZSH/themes creates untracked files
+# that make `omz update` abort with "untracked working tree files would be
+# overwritten by merge" once Oh My Zsh tracks those same paths.
+ZSH_DIR="${ZSH:-$HOME/.oh-my-zsh}"
+ZSH_CUSTOM="${ZSH_CUSTOM:-$ZSH_DIR/custom}"
+mkdir -p "$ZSH_CUSTOM/plugins" "$ZSH_CUSTOM/themes"
+
+is_tracked() { git -C "$ZSH_DIR" ls-files --error-unmatch "$1" >/dev/null 2>&1; }
+
+install_plugin() {
+    local name="$1" url="$2"
+    # Migrate a legacy untracked clone out of the Oh My Zsh checkout.
+    if [ -d "$ZSH_DIR/plugins/$name" ] && ! is_tracked "plugins/$name"; then
+        if [ ! -d "$ZSH_CUSTOM/plugins/$name" ]; then
+            mv "$ZSH_DIR/plugins/$name" "$ZSH_CUSTOM/plugins/$name"
+            echo -e "${GREEN}  ✓ $name moved out of the Oh My Zsh repo${NC}"
+        else
+            rm -rf "$ZSH_DIR/plugins/$name"
+            echo -e "${GREEN}  ✓ removed legacy $name from the Oh My Zsh repo${NC}"
+        fi
+    fi
+    if [ -d "$ZSH_DIR/plugins/$name" ]; then
+        echo -e "${GREEN}  ✓ $name bundled with Oh My Zsh${NC}"
+    elif [ ! -d "$ZSH_CUSTOM/plugins/$name" ]; then
+        echo "  Installing $name..."
+        git clone "$url" "$ZSH_CUSTOM/plugins/$name"
+        echo -e "${GREEN}  ✓ $name installed${NC}"
+    else
+        echo -e "${GREEN}  ✓ $name already installed${NC}"
+    fi
+}
+
 # Install plugins
 echo -e "${YELLOW}[4/7] Installing required plugins...${NC}"
-
-# zsh-autosuggestions
-if [ ! -d "$HOME/.oh-my-zsh/plugins/zsh-autosuggestions" ]; then
-    echo "  Installing zsh-autosuggestions..."
-    git clone https://github.com/zsh-users/zsh-autosuggestions "$HOME/.oh-my-zsh/plugins/zsh-autosuggestions"
-    echo -e "${GREEN}  ✓ zsh-autosuggestions installed${NC}"
-else
-    echo -e "${GREEN}  ✓ zsh-autosuggestions already installed${NC}"
-fi
-
-# zsh-syntax-highlighting
-if [ ! -d "$HOME/.oh-my-zsh/plugins/zsh-syntax-highlighting" ]; then
-    echo "  Installing zsh-syntax-highlighting..."
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$HOME/.oh-my-zsh/plugins/zsh-syntax-highlighting"
-    echo -e "${GREEN}  ✓ zsh-syntax-highlighting installed${NC}"
-else
-    echo -e "${GREEN}  ✓ zsh-syntax-highlighting already installed${NC}"
-fi
+install_plugin zsh-autosuggestions https://github.com/zsh-users/zsh-autosuggestions
+install_plugin zsh-syntax-highlighting https://github.com/zsh-users/zsh-syntax-highlighting
 
 # Install spaceship theme
 echo -e "${YELLOW}[5/7] Installing spaceship theme...${NC}"
-if [ ! -d "$HOME/.oh-my-zsh/themes/spaceship-prompt" ]; then
+if [ -d "$ZSH_DIR/themes/spaceship-prompt" ] && ! is_tracked "themes/spaceship-prompt"; then
+    if [ ! -d "$ZSH_CUSTOM/themes/spaceship-prompt" ]; then
+        mv "$ZSH_DIR/themes/spaceship-prompt" "$ZSH_CUSTOM/themes/spaceship-prompt"
+    else
+        rm -rf "$ZSH_DIR/themes/spaceship-prompt"
+    fi
+    rm -f "$ZSH_DIR/themes/spaceship.zsh-theme"
+    echo -e "${GREEN}  ✓ spaceship moved out of the Oh My Zsh repo${NC}"
+fi
+if [ ! -d "$ZSH_CUSTOM/themes/spaceship-prompt" ]; then
     echo "  Installing spaceship theme..."
-    git clone https://github.com/spaceship-prompt/spaceship-prompt.git "$HOME/.oh-my-zsh/themes/spaceship-prompt" --depth=1
-    ln -s "$HOME/.oh-my-zsh/themes/spaceship-prompt/spaceship.zsh-theme" "$HOME/.oh-my-zsh/themes/spaceship.zsh-theme"
+    git clone https://github.com/spaceship-prompt/spaceship-prompt.git "$ZSH_CUSTOM/themes/spaceship-prompt" --depth=1
     echo -e "${GREEN}  ✓ spaceship theme installed${NC}"
 else
     echo -e "${GREEN}  ✓ spaceship theme already installed${NC}"
 fi
+ln -sf "$ZSH_CUSTOM/themes/spaceship-prompt/spaceship.zsh-theme" "$ZSH_CUSTOM/themes/spaceship.zsh-theme"
 
 # Backup existing .zshrc and install new one
 echo -e "${YELLOW}[6/7] Installing .zshrc configuration...${NC}"
