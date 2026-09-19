@@ -27,6 +27,9 @@
 # Install the git component
 ./install.sh install git
 
+# Install the GitHub CLI component
+./install.sh install gh
+
 # Install all components
 ./install.sh install all
 
@@ -66,6 +69,7 @@ Available Components:
 
   1 - ozsh: Oh My Zsh - Spaceship prompt + plugins
   2 - git: Git config, aliases, and sensible defaults
+  3 - gh: GitHub CLI - install, auth, and config
 
 Install Options:
 

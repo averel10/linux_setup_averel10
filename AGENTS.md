@@ -31,7 +31,7 @@ No changes to `install.sh` are needed; components are discovered by `<dir>/compo
 
 1. Create `<name>/component.conf` setting `COMPONENT_DESCRIPTION` and `COMPONENT_ORDER` (lower = earlier in the menu).
 2. Add `scripts/install.sh` and `scripts/remove.sh`, sourcing `lib/common.sh`.
-3. Add `dotfiles/`, an optional `scripts/doctor.sh`, and `README.md`.
+3. Add `dotfiles/` if the component deploys files, an optional `scripts/doctor.sh`, and `README.md`.
 
 ## Conventions
 

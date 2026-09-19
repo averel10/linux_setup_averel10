@@ -16,6 +16,9 @@ This repository contains installable components for setting up a consistent deve
 - **[git](git/)** - Global Git configuration
   - Sensible defaults, aliases, and a global ignore file
   - Personal identity kept in `~/.gitconfig.local`
+- **[gh](gh/)** - GitHub CLI
+  - Installs `gh` (package manager or official release fallback)
+  - Defaults, zsh completion, and optional `gh auth login`
 
 ### Future Components
 
@@ -83,13 +86,21 @@ linux_setup_averel10/
 │       ├── remove.sh       # Component remover
 │       └── doctor.sh       # Component status report
 │
-└── git/                    # Git component
+├── git/                    # Git component
+│   ├── component.conf
+│   ├── README.md
+│   ├── dotfiles/
+│   │   ├── .gitconfig
+│   │   ├── .gitconfig.local
+│   │   └── .gitignore_global
+│   └── scripts/
+│       ├── install.sh
+│       ├── remove.sh
+│       └── doctor.sh
+│
+└── gh/                     # GitHub CLI component
     ├── component.conf
     ├── README.md
-    ├── dotfiles/
-    │   ├── .gitconfig
-    │   ├── .gitconfig.local
-    │   └── .gitignore_global
     └── scripts/
         ├── install.sh
         ├── remove.sh
@@ -107,8 +118,8 @@ COMPONENT_ORDER=20            # lower numbers appear first
 ```
 
 The directory then provides `scripts/install.sh`, `scripts/remove.sh`, an
-optional `scripts/doctor.sh`, `dotfiles/`, and a `README.md`. Component scripts
-source `lib/common.sh` for shared helpers.
+optional `scripts/doctor.sh`, an optional `dotfiles/`, and a `README.md`.
+Component scripts source `lib/common.sh` for shared helpers.
 
 Oh My Zsh third-party plugins and themes are installed under
 `~/.oh-my-zsh/custom/`, never inside the Oh My Zsh git checkout, so `omz update`
@@ -136,12 +147,22 @@ Managed global Git configuration with:
 
 **[Learn more →](git/README.md)**
 
+### GitHub CLI (gh)
+
+Installs and configures the GitHub CLI:
+- Package-manager install with an official-release fallback on Linux
+- Sensible defaults and zsh completion
+- Optional `gh auth login` during install
+
+**[Learn more →](gh/README.md)**
+
 ## How to Use Each Component
 
 Each component has its own README with detailed instructions:
 
 1. [Oh My Zsh Setup](ozsh/README.md)
 2. [Git Setup](git/README.md)
+3. [GitHub CLI Setup](gh/README.md)
 
 ## Installation Options
 

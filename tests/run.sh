@@ -16,6 +16,16 @@ chmod +x "$WORK/bin/zsh"
 export PATH="$WORK/bin:$PATH"
 export SHELL="$WORK/bin/zsh"
 
+# Stub gh so the gh component never downloads or authenticates.
+cat > "$WORK/bin/gh" <<'STUB'
+#!/bin/sh
+case "$1" in
+    --version) echo "gh version 0.0.0-test" ;;
+esac
+exit 0
+STUB
+chmod +x "$WORK/bin/gh"
+
 PASS=0
 FAIL=0
 pass() { PASS=$((PASS+1)); printf 'ok   - %s\n' "$1"; }
@@ -70,9 +80,11 @@ run_noinput "$INSTALL" list
 assert_rc 0 "$RC" "list exits 0"
 assert_contains "ozsh" "$OUT" "list shows ozsh"
 assert_contains "git" "$OUT" "list shows git"
+assert_contains "gh" "$OUT" "list shows gh"
 PLAIN="$(strip_ansi "$OUT")"
 assert_contains "1 - ozsh" "$PLAIN" "ozsh is menu item 1"
 assert_contains "2 - git" "$PLAIN" "git is menu item 2"
+assert_contains "3 - gh" "$PLAIN" "gh is menu item 3"
 
 run_noinput "$INSTALL" --help
 assert_rc 0 "$RC" "help exits 0"
@@ -130,6 +142,19 @@ assert_rc 0 "$RC" "doctor passes with git installed"
 PLAIN="$(strip_ansi "$OUT")"
 assert_contains "== git ==" "$PLAIN" "doctor reports the git component"
 
+# --- gh component ---
+run_noinput "$INSTALL" install gh
+assert_rc 0 "$RC" "install gh exits 0"
+assert_exists "$HOME_DIR/.oh-my-zsh/custom/gh.zsh" "gh zsh completion installed"
+run_noinput "$INSTALL" doctor
+assert_rc 0 "$RC" "doctor passes with gh installed"
+PLAIN="$(strip_ansi "$OUT")"
+assert_contains "== gh ==" "$PLAIN" "doctor reports the gh component"
+
+# --- gh dry-run does not authenticate or install ---
+run_noinput "$INSTALL" --dry-run install gh
+assert_rc 0 "$RC" "gh dry-run exits 0"
+
 # --- remove keeps files the user declines to delete ---
 run $'y\nn\nn\nn\nn\nn\n' "$INSTALL" remove ozsh
 assert_rc 0 "$RC" "remove ozsh exits 0"
@@ -142,6 +167,11 @@ run $'y\nn\nn\nn\n' "$INSTALL" remove git
 assert_rc 0 "$RC" "remove git exits 0"
 assert_exists "$HOME_DIR/.gitconfig" "remove git keeps .gitconfig when declined"
 assert_exists "$HOME_DIR/.gitconfig.local" "remove git keeps .gitconfig.local when declined"
+
+# --- remove gh deletes the completion file it owns ---
+run $'y\ny\n' "$INSTALL" remove gh
+assert_rc 0 "$RC" "remove gh exits 0"
+assert_absent "$HOME_DIR/.oh-my-zsh/custom/gh.zsh" "remove gh deletes completion"
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
